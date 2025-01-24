@@ -1,8 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Menu } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Navbar = () => {
   const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
   
   const navItems = [
     { title: "Главная", path: "/" },
@@ -19,6 +28,7 @@ const Navbar = () => {
             </span>
           </Link>
           
+          {/* Desktop Navigation */}
           <div className="hidden sm:flex space-x-8">
             {navItems.map((item) => (
               <Link
@@ -32,6 +42,34 @@ const Navbar = () => {
                 {item.title}
               </Link>
             ))}
+          </div>
+
+          {/* Mobile Navigation */}
+          <div className="sm:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <div className="flex flex-col space-y-4 mt-8">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "text-gray-700 hover:text-purple-600 transition-colors px-3 py-2 rounded-md text-base font-medium",
+                        location.pathname === item.path && "text-purple-600"
+                      )}
+                    >
+                      {item.title}
+                    </Link>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
