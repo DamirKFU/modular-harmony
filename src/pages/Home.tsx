@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCategories, fetchColors } from "@/services/api";
 import { API_CONFIG } from "@/config/api";
-import { Size } from "@/types/api";
+import { Size, ProductResponse } from "@/types/api";
 import {
   Select,
   SelectContent,
@@ -39,7 +39,8 @@ const Home = () => {
       size: selectedSize,
       page: String(pageParam),
     }),
-    getNextPageParam: (lastPage) => {
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: ProductResponse) => {
       if (lastPage.data.next) {
         const url = new URL(lastPage.data.next);
         const page = url.searchParams.get('page');
