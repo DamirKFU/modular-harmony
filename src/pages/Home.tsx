@@ -1,28 +1,52 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ProductCard from "@/components/ProductCard";
-import { fetchProducts } from "@/services/api";
-import { ProductResponse } from "@/types/api";
+import { fetchProducts, fetchCategories, fetchColors } from "@/services/api";
 import { API_CONFIG } from "@/config/api";
+import { Size } from "@/types/api";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+
+const SIZES: Size[] = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const Home = () => {
-  const { data, isLoading, error } = useQuery({  
-    queryKey: ['products'],
-    queryFn: fetchProducts,
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<Size | "">("");
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
   });
 
-  if (error) {
-    toast.error("Не удалось загрузить товары");
-  }
+  const { data: colorsData } = useQuery({
+    queryKey: ['colors'],
+    queryFn: fetchColors,
+  });
+
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useQuery({
+    queryKey: ['products', selectedCategory, selectedColor, selectedSize],
+    queryFn: () => fetchProducts({
+      category: selectedCategory,
+      color: selectedColor,
+      size: selectedSize,
+    }),
+    meta: {
+      onError: () => {
+        toast.error("Не удалось загрузить товары");
+      }
+    }
+  });
 
   const products = data?.data.results || [];
+  const hasMore = data?.data.next !== null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -36,35 +60,91 @@ const Home = () => {
           </p>
         </div>
 
+        <div className="flex flex-wrap gap-4 justify-center">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Категория" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Все категории</SelectItem>
+              {categoriesData?.data.map((category) => (
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedColor} onValueChange={setSelectedColor}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Цвет" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Все цвета</SelectItem>
+              {colorsData?.data.map((color) => (
+                <SelectItem key={color.id} value={color.name}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full" 
+                      style={{ backgroundColor: color.color }}
+                    />
+                    {color.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedSize} onValueChange={(value) => setSelectedSize(value as Size)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Размер" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Все размеры</SelectItem>
+              {SIZES.map((size) => (
+                <SelectItem key={size} value={size}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
           </div>
         ) : (
-          <div className="relative">
-            <Carousel
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {products.map((product) => (
-                  <CarouselItem key={product.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                    <ProductCard 
-                      product={{
-                        ...product,
-                        image: `${API_CONFIG.baseURL}${product.image}`
-                      }} 
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-0" />
-              <CarouselNext className="right-0" />
-            </Carousel>
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              {products.map((product) => (
+                <ProductCard 
+                  key={product.id}
+                  product={{
+                    ...product,
+                    image: `${API_CONFIG.baseURL}${product.image}`
+                  }} 
+                />
+              ))}
+            </div>
+            
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  variant="outline"
+                  size="lg"
+                >
+                  {isFetchingNextPage ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                  ) : (
+                    "Загрузить еще"
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
