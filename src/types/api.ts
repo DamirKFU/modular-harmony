@@ -1,4 +1,4 @@
-export interface GarmentResponse {
+export interface ProductResponse {
   data: {
     count: number;
     next: string | null;
@@ -10,4 +10,5 @@ export interface GarmentResponse {
       price: number;
     }>;
   };
+  message: string;
 }

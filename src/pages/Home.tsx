@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ProductCard from "@/components/ProductCard";
-import { fetchGarments } from "@/services/api";
+import { fetchProducts } from "@/services/api";
+import { ProductResponse } from "@/types/api";
 import { API_CONFIG } from "@/config/api";
 import {
   Carousel,
@@ -12,13 +13,14 @@ import {
 } from "@/components/ui/carousel";
 
 const Home = () => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['garments'],
-    queryFn: fetchGarments,
-    onError: () => {
-      toast.error("Не удалось загрузить товары");
-    }
+  const { data, isLoading, error } = useQuery({  
+    queryKey: ['products'],
+    queryFn: fetchProducts,
   });
+
+  if (error) {
+    toast.error("Не удалось загрузить товары");
+  }
 
   const products = data?.data.results || [];
 
