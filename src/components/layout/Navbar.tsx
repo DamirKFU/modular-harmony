@@ -15,6 +15,7 @@ const Navbar = () => {
   
   const navItems = [
     { title: "Главная", path: "/" },
+    { title: "Конструктор", path: "/constructor" },
     { title: "О нас", path: "/about" }
   ];
 
