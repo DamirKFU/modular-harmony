@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts, fetchCategories, fetchColors } from "@/services/api";
@@ -31,13 +31,22 @@ const Home = () => {
     queryFn: fetchColors,
   });
 
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useQuery({
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['products', selectedCategory, selectedColor, selectedSize],
-    queryFn: () => fetchProducts({
+    queryFn: ({ pageParam = 1 }) => fetchProducts({
       category: selectedCategory,
       color: selectedColor,
       size: selectedSize,
+      page: String(pageParam),
     }),
+    getNextPageParam: (lastPage) => {
+      if (lastPage.data.next) {
+        const url = new URL(lastPage.data.next);
+        const page = url.searchParams.get('page');
+        return page ? parseInt(page) : undefined;
+      }
+      return undefined;
+    },
     meta: {
       onError: () => {
         toast.error("Не удалось загрузить товары");
@@ -45,8 +54,8 @@ const Home = () => {
     }
   });
 
-  const products = data?.data.results || [];
-  const hasMore = data?.data.next !== null;
+  const products = data?.pages.flatMap(page => page.data.results) || [];
+  const hasMore = data?.pages[data.pages.length - 1]?.data.next !== null;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -66,7 +75,7 @@ const Home = () => {
               <SelectValue placeholder="Категория" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все категории</SelectItem>
+              <SelectItem value="_all">Все категории</SelectItem>
               {categoriesData?.data.map((category) => (
                 <SelectItem key={category.id} value={category.name}>
                   {category.name}
@@ -80,7 +89,7 @@ const Home = () => {
               <SelectValue placeholder="Цвет" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все цвета</SelectItem>
+              <SelectItem value="_all">Все цвета</SelectItem>
               {colorsData?.data.map((color) => (
                 <SelectItem key={color.id} value={color.name}>
                   <div className="flex items-center gap-2">
@@ -100,7 +109,7 @@ const Home = () => {
               <SelectValue placeholder="Размер" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все размеры</SelectItem>
+              <SelectItem value="_all">Все размеры</SelectItem>
               {SIZES.map((size) => (
                 <SelectItem key={size} value={size}>
                   {size}

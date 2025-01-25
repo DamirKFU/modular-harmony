@@ -10,9 +10,9 @@ interface FetchProductsParams {
 
 export const fetchProducts = async (params?: FetchProductsParams): Promise<ProductResponse> => {
   const queryParams = new URLSearchParams();
-  if (params?.category) queryParams.append('category', params.category);
-  if (params?.color) queryParams.append('color', params.color);
-  if (params?.size) queryParams.append('size', params.size);
+  if (params?.category && params.category !== '_all') queryParams.append('category', params.category);
+  if (params?.color && params.color !== '_all') queryParams.append('color', params.color);
+  if (params?.size && params.size !== '_all') queryParams.append('size', params.size);
   if (params?.page) queryParams.append('page', params.page);
 
   const url = `${API_CONFIG.baseURL}${API_CONFIG.endpoints.products}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
